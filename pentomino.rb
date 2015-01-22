@@ -3,13 +3,14 @@ BROW, BCOL = 10, 6
 
 # すべてのピース形状をPieceオブジェクトの配列に保存する
 class Piece
-  attr_accessor :used, :form, :loc_form, :letter
+  attr_accessor :used, :form, :loc_form, :letter, :color
 
-  def initialize(a, m, n, l)
+  def initialize(a, m, n, l, c)
     @used = false
     @form = []
     @loc_form = []
     @letter = l
+    @color = c
     for i in (1..m)
       for j in (1..n)
         @form << [a, a.flatten.index(1)]
@@ -20,18 +21,18 @@ class Piece
   end
 end
   
-pp = [Piece.new([[0,1,0], [1,1,1], [0,1,0]], 1, 1, :X),
-      Piece.new([[1,1,1], [1,0,1]]         , 1, 4, :U),
-      Piece.new([[1,1,0], [0,1,1], [0,0,1]], 1, 4, :W),
-      Piece.new([[1,1,0], [0,1,1], [0,1,0]], 1, 2, :F),
-      Piece.new([[1,1,0], [0,1,0], [0,1,1]], 2, 2, :Z),
-      Piece.new([[1,1,1], [1,1,0]],          2, 4, :P),
-      Piece.new([[1,1,1,0], [0,0,1,1]],      2, 4, :N),
-      Piece.new([[1,1,1,1], [0,1,0,0]],      2, 4, :Y),
-      Piece.new([[1,1,1], [0,1,0], [0,1,0]], 1, 4, :T),
-      Piece.new([[1,1,1,1], [1,0,0,0]],      2, 4, :L),
-      Piece.new([[1,1,1], [1,0,0], [1,0,0]], 1, 4, :V),
-      Piece.new([[1,1,1,1,1]],               1, 2, :I)]
+pp = [Piece.new([[0,1,0], [1,1,1], [0,1,0]], 1, 1, :X, 141),
+      Piece.new([[1,1,1], [1,0,1]]         , 1, 4, :U,   6),
+      Piece.new([[1,1,0], [0,1,1], [0,0,1]], 1, 4, :W, 104),
+      Piece.new([[1,1,0], [0,1,1], [0,1,0]], 1, 2, :F, 172),
+      Piece.new([[1,1,0], [0,1,0], [0,1,1]], 2, 2, :Z, 211),
+      Piece.new([[1,1,1], [1,1,0]],          2, 4, :P,  70),
+      Piece.new([[1,1,1,0], [0,0,1,1]],      2, 4, :N, 121),
+      Piece.new([[1,1,1,1], [0,1,0,0]],      2, 4, :Y, 170),
+      Piece.new([[1,1,1], [0,1,0], [0,1,0]], 1, 4, :T,  42),
+      Piece.new([[1,1,1,1], [1,0,0,0]],      2, 4, :L,   3),
+      Piece.new([[1,1,1], [1,0,0], [1,0,0]], 1, 4, :V,  75),
+      Piece.new([[1,1,1,1,1]],               1, 2, :I, 217)]
 
 pp.each_with_index do |piece, i|
   piece.form.each do |form|
@@ -45,6 +46,8 @@ pp.each_with_index do |piece, i|
   end
 end
 
+BLOCK_COLOR = [250] + pp.map{|i| i.color} + [0]
+
 
 
 # boardの初期化
@@ -55,13 +58,20 @@ end
 
 
 
+# エスケープシーケンス定義
+def bgcolor(nnn); "\e[48;5;#{nnn}m" ; end # 色指定の開始（nnn=0..255）
+def reset       ; "\e[m"            ; end # 色指定の終了
+
+# 出力コード生成
+def create_block(color); bgcolor(BLOCK_COLOR[color]) + "  " + reset; end
+
 # パズルの解を求める
 def display_board(board, pp)
   $counter += 1
   puts "No. #{$counter}"
   a = []
   board.each_slice(BCOL + 1) do |line|
-    a << line.reject {|i| i == 100}.map {|i| pp[i - 1].letter}
+    a << line.reject {|i| i == 100}.map {|i| create_block(i)}
   end
   a[0..-2].transpose.each {|line| puts line.join}
   puts
