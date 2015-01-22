@@ -67,7 +67,6 @@ def create_block(color); bgcolor(BLOCK_COLOR[color]) + "  " + reset; end
 
 # パズルの解を求める
 def display_board(board, pp)
-  $counter += 1
   puts "No. #{$counter}"
   a = []
   board.each_slice(BCOL + 1) do |line|
@@ -87,8 +86,10 @@ def try_piece(board, pp, lvl)
       # ピースを置く
       blocks.each {|b| board[x + b] = i + 1}
       piece.used = true
+      display_board(board, pp)
       # すべてのピースを置ききったらTrueを返す（recursiveコールの終了）
       if lvl == 11 then
+        $counter += 1
         display_board(board, pp)
         # ピースを戻す
         blocks.each {|b| board[x + b] = 0}
