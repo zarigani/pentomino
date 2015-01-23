@@ -158,6 +158,9 @@ end
 $counter = 0
 $try_counter = 0
 puts reset_screen
+puts "Pentomino #{BCOL}x#{BROW}"
+puts next_screen
 try_piece(board, pp, 0)
+puts "Pentomino #{BCOL}x#{BROW}"
 puts "解合計: #{$counter}"
 puts "操作数: #{$try_counter}"
