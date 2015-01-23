@@ -59,23 +59,28 @@ end
 
 
 # エスケープシーケンス定義
+def home        ; "\e[H"            ; end # カーソル位置を画面左上へ移動（ホームポジション）
+def clear(n=2)  ; "\e[#{n}J"        ; end # n=(0:画面先頭からカーソル位置まで消去, 1:カーソル位置から画面末尾まで消去, 2:画面全体を消去)
+def moveup(n)   ; "\e[#{n}A"        ; end # カーソルを上方向へn行移動
 def bgcolor(nnn); "\e[48;5;#{nnn}m" ; end # 色指定の開始（nnn=0..255）
 def reset       ; "\e[m"            ; end # 色指定の終了
 
 # 出力コード生成
 def create_block(color); bgcolor(BLOCK_COLOR[color]) + "  " + reset; end
+def reset_screen       ; home + clear                              ; end
+def next_screen        ; "\n" * (BCOL + 2)                         ; end
 
-# パズルの解を求める
+# boardを表示
 def display_board(board, pp)
-  puts "No. #{$counter}"
+  puts moveup(BCOL + 1) + "No. #{$counter}"
   a = []
   board.each_slice(BCOL + 1) do |line|
     a << line.reject {|i| i == 100}.map {|i| create_block(i)}
   end
   a[0..-2].transpose.each {|line| puts line.join}
-  puts
 end
 
+# パズルの解を求める
 def try_piece(board, pp, lvl)
   $try_counter += 1
   x = board.index(0)
@@ -91,6 +96,7 @@ def try_piece(board, pp, lvl)
       if lvl == 11 then
         $counter += 1
         display_board(board, pp)
+        puts next_screen
         # ピースを戻す
         blocks.each {|b| board[x + b] = 0}
         piece.used = false
@@ -107,6 +113,7 @@ end
 
 $counter = 0
 $try_counter = 0
+puts reset_screen
 try_piece(board, pp, 0)
 puts "解合計: #{$counter}"
 puts "操作数: #{$try_counter}"
