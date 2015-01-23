@@ -44,12 +44,12 @@ end
 
 # すべてのピース形状をPieceオブジェクトの配列に保存する
 class Piece
-  attr_accessor :used, :form, :loc_form, :letter, :color
+  attr_accessor :used, :form, :form_pos, :letter, :color
 
   def initialize(a, m, n, l, c)
     @used = false
     @form = []
-    @loc_form = []
+    @form_pos = []
     @letter = l
     @color = c
     for i in (1..m)
@@ -63,20 +63,20 @@ class Piece
 end
 
 r = BCOL == 8 ? 1 : 2
-pp = [Piece.new([[0,1,0], [1,1,1], [0,1,0]], 1, 1, :X, 141),
-      Piece.new([[1,1,1], [1,0,1]]         , 1, 4, :U,   6),
-      Piece.new([[1,1,0], [0,1,1], [0,0,1]], 1, 4, :W, 104),
-      Piece.new([[1,1,0], [0,1,1], [0,1,0]], 1, r, :F, 172),
-      Piece.new([[1,1,0], [0,1,0], [0,1,1]], 2, 2, :Z, 211),
-      Piece.new([[1,1,1], [1,1,0]],          2, 4, :P,  70),
-      Piece.new([[1,1,1,0], [0,0,1,1]],      2, 4, :N, 121),
-      Piece.new([[1,1,1,1], [0,1,0,0]],      2, 4, :Y, 170),
-      Piece.new([[1,1,1], [0,1,0], [0,1,0]], 1, 4, :T,  42),
-      Piece.new([[1,1,1,1], [1,0,0,0]],      2, 4, :L,   3),
-      Piece.new([[1,1,1], [1,0,0], [1,0,0]], 1, 4, :V,  75),
-      Piece.new([[1,1,1,1,1]],               1, 2, :I, 217)]
+@pieces = [Piece.new([[0,1,0], [1,1,1], [0,1,0]], 1, 1, :X, 141),
+           Piece.new([[1,1,1], [1,0,1]]         , 1, 4, :U,   6),
+           Piece.new([[1,1,0], [0,1,1], [0,0,1]], 1, 4, :W, 104),
+           Piece.new([[1,1,0], [0,1,1], [0,1,0]], 1, r, :F, 172),
+           Piece.new([[1,1,0], [0,1,0], [0,1,1]], 2, 2, :Z, 211),
+           Piece.new([[1,1,1], [1,1,0]],          2, 4, :P,  70),
+           Piece.new([[1,1,1,0], [0,0,1,1]],      2, 4, :N, 121),
+           Piece.new([[1,1,1,1], [0,1,0,0]],      2, 4, :Y, 170),
+           Piece.new([[1,1,1], [0,1,0], [0,1,0]], 1, 4, :T,  42),
+           Piece.new([[1,1,1,1], [1,0,0,0]],      2, 4, :L,   3),
+           Piece.new([[1,1,1], [1,0,0], [1,0,0]], 1, 4, :V,  75),
+           Piece.new([[1,1,1,1,1]],               1, 2, :I, 217)]
 
-pp.each_with_index do |piece, i|
+@pieces.each_with_index do |piece, i|
   piece.form.each do |form|
     a = []
     form[0].each_with_index do |row, r|
@@ -84,83 +84,110 @@ pp.each_with_index do |piece, i|
         a << r * (BCOL + 1) + c - form[1] if col == 1
       end
     end
-    piece.loc_form << a
+    piece.form_pos << a
   end
 end
 
-BLOCK_COLOR = [250] + pp.map{|i| i.color} + [0]
-
-
-
-# boardの初期化
-board = Array.new((BROW + 1) * (BCOL + 1), 0)
-board.each_with_index do |b, i|
-  board[i] = 100 if ((i + 1) % (BCOL + 1)) == 0 || i >= ((BCOL + 1) * BROW)
-end
-board[30], board[31], board[39], board[40] = 13, 13, 13, 13 if BCOL == 8
-board[27], board[35], board[43]            = 13, 13, 13     if BCOL == 7
+BLOCK_COLOR = [250] + @pieces.map{|i| i.color} + [0]
 
 
 
 # エスケープシーケンス定義
-def home        ; "\e[H"            ; end # カーソル位置を画面左上へ移動（ホームポジション）
-def clear(n=2)  ; "\e[#{n}J"        ; end # n=(0:画面先頭からカーソル位置まで消去, 1:カーソル位置から画面末尾まで消去, 2:画面全体を消去)
-def moveup(n)   ; "\e[#{n}A"        ; end # カーソルを上方向へn行移動
-def bgcolor(nnn); "\e[48;5;#{nnn}m" ; end # 色指定の開始（nnn=0..255）
-def reset       ; "\e[m"            ; end # 色指定の終了
+module EscapeSequence
+  module_function
 
-# 出力コード生成
-def create_block(color); bgcolor(BLOCK_COLOR[color]) + "  " + reset; end
-def reset_screen       ; home + clear                              ; end
-def next_screen        ; "\n" * (BCOL + 2)                         ; end
+  def home        ; "\e[H"            ; end # カーソル位置を画面左上へ移動（ホームポジション）
+  def clear(n=2)  ; "\e[#{n}J"        ; end # n=(0:画面先頭からカーソル位置まで消去, 1:カーソル位置から画面末尾まで消去, 2:画面全体を消去)
+  def moveup(n)   ; "\e[#{n}A"        ; end # カーソルを上方向へn行移動
+  def bgcolor(nnn); "\e[48;5;#{nnn}m" ; end # 色指定の開始（nnn=0..255）
+  def reset       ; "\e[m"            ; end # 色指定の終了
 
-# boardを表示
-def display_board(board, pp, title='')
-  puts moveup(BCOL + 1) + title
-  a = []
-  board.each_slice(BCOL + 1) do |line|
-    a << line.reject {|i| i == 100}.map {|i| create_block(i)}
-  end
-  a[0..-2].transpose.each {|line| puts line.join}
+  def create_block(color); bgcolor(BLOCK_COLOR[color]) + "  " + reset; end
+  def back_to_head       ; moveup(BCOL + 1)                          ; end
+  def reset_screen       ; home + clear                              ; end
+  def next_screen        ; "\n" * (BCOL + 2)                         ; end
 end
 
+
+
+# board定義
+class Board
+  def initialize(row, col)
+    @row, @col = row, col
+    @cell = Array.new((row + 1) * (col + 1), 0)
+    @cell.each_with_index do |b, i|
+      @cell[i] = 100 if ((i + 1) % (col + 1)) == 0 || i >= ((col + 1) * row)
+    end
+    @cell[30], @cell[31], @cell[39], @cell[40] = 13, 13, 13, 13 if col == 8
+    @cell[27], @cell[35], @cell[43]            = 13, 13, 13     if col == 7
+  end
+
+  def display(header='')
+    puts EscapeSequence.back_to_head + header
+    matrix = []
+    @cell.each_slice(@col + 1) do |line|
+      matrix << line.reject {|i| i == 100}.map {|i| EscapeSequence.create_block(i)}
+    end
+    matrix[0..-2].transpose.each {|line| puts line.join}
+  end
+
+  def blank_index
+    @cell.index(0)
+  end
+
+  def used?(pos, ox)
+    @cell[ox + pos[1]]>0 || @cell[ox + pos[2]]>0 || @cell[ox + pos[3]]>0 || @cell[ox + pos[4]]>0
+  end
+
+  def set_piece(piece_id, pos, ox)
+    pos.each {|p| @cell[ox + p] = piece_id}
+  end
+
+  def unset_piece(pos, ox)
+    pos.each {|p| @cell[ox + p] = 0}
+  end
+end
+
+
+
 # パズルの解を求める
-def try_piece(board, pp, lvl)
-  $try_counter += 1
-  x = board.index(0)
-  pp.each_with_index do |piece, i|
+def try_piece(lvl)
+  @try_counter += 1
+  origin_x = @board.blank_index
+  @pieces.each_with_index do |piece, i|
     next if piece.used
-    piece.loc_form.each do |blocks|
-      next if board[x + blocks[0]]>0 || board[x + blocks[1]]>0 || board[x + blocks[2]]>0 || board[x + blocks[3]]>0 || board[x + blocks[4]]>0
+    piece.form_pos.each do |pos|
+      next if @board.used?(pos, origin_x)
       # ピースを置く
-      blocks.each {|b| board[x + b] = i + 1}
+      @board.set_piece(i + 1, pos, origin_x)
       piece.used = true
-      display_board(board, pp) if !$options[:quiet]
-      # すべてのピースを置ききったらTrueを返す（recursiveコールの終了）
+      @board.display if !$options[:quiet]
+      # すべてのピースを置ききったら再帰呼び出し終了
       if lvl == 11 then
-        $counter += 1
-        display_board(board, pp, "No. #{$counter} (TRY: #{$try_counter})")
-        puts next_screen
+        @counter += 1
+        @board.display("No. #{@counter} (TRY: #{@try_counter})")
+        puts EscapeSequence.next_screen
         # ピースを戻す
-        blocks.each {|b| board[x + b] = 0}
+        @board.unset_piece(pos, origin_x)
         piece.used = false
         return
       end
       # 次のピースを試す
-      try_piece(board, pp, lvl + 1)
+      try_piece(lvl + 1)
       # ピースを戻す
-      blocks.each {|b| board[x + b] = 0}
+      @board.unset_piece(pos, origin_x)
       piece.used = false
     end
   end
 end
 
-$counter = 0
-$try_counter = 0
-puts reset_screen
+@counter = 0
+@try_counter = 0
+@board = Board.new(BROW, BCOL)
+puts EscapeSequence.reset_screen
 puts "Pentomino #{BCOL}x#{BROW}"
-puts next_screen
-try_piece(board, pp, 0)
+puts EscapeSequence.next_screen
+try_piece(0)
 puts "Pentomino #{BCOL}x#{BROW}"
-puts "解合計: #{$counter}"
-puts "操作数: #{$try_counter}"
+puts "解合計: #{@counter}"
+puts "操作数: #{@try_counter}"
