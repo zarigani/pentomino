@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Pentomino::VERSION
   spec.authors       = ["zariganitosh"]
   spec.email         = ["XXXX@example.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.summary       = %q{Find answer of pentomino puzzle.}
+  spec.description   = %q{Find answer of pentomino puzzle on the board(3x20, 4x15, 5x12, 6x10, 7x9-3, 8x8-4).}
   spec.homepage      = ""
   spec.license       = "MIT"
 
