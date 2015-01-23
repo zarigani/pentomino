@@ -32,7 +32,7 @@ OptionParser.new do |opt|
   begin
     opt.parse!(ARGV)
     BCOL = (ARGV[0] || 6).to_i
-    BROW = 64 / BCOL
+    BROW = (60.0 / BCOL).round
     raise "Invalid board size: #{BCOL}" if BCOL < 3 || 8 < BCOL
   rescue => e
     puts e
