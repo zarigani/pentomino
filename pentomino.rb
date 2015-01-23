@@ -115,8 +115,8 @@ def reset_screen       ; home + clear                              ; end
 def next_screen        ; "\n" * (BCOL + 2)                         ; end
 
 # boardを表示
-def display_board(board, pp)
-  puts moveup(BCOL + 1) + "No. #{$counter}"
+def display_board(board, pp, title='')
+  puts moveup(BCOL + 1) + title
   a = []
   board.each_slice(BCOL + 1) do |line|
     a << line.reject {|i| i == 100}.map {|i| create_block(i)}
@@ -139,7 +139,7 @@ def try_piece(board, pp, lvl)
       # すべてのピースを置ききったらTrueを返す（recursiveコールの終了）
       if lvl == 11 then
         $counter += 1
-        display_board(board, pp)
+        display_board(board, pp, "No. #{$counter} (TRY: #{$try_counter})")
         puts next_screen
         # ピースを戻す
         blocks.each {|b| board[x + b] = 0}
